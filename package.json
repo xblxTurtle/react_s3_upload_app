@@ -1,0 +1,16 @@
+{
+  "name": "react_s3_upload_app",
+  "version": "1.0.0",
+  "description": "example react app to upload to aws s3 test change",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "webpack": "^5.109.2",
+    "webpack-cli": "^7.2.2"
+  }
+}
