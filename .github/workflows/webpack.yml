@@ -37,6 +37,11 @@ jobs:
       run: |
         npm install
         npx webpack
+    
+    - name: Debug OIDC Claims
+      uses: github/actions-oidc-debugger@main
+      with:
+        audience: '${{ github.server_url }}/${{ github.repository_owner }}'
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v6.2.3
