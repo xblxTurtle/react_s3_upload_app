@@ -5,9 +5,14 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+    types: [opened, synchronize, reopened, closed]
+
+# Need ID token write permission to use OIDC
+permissions:
+  id-token: write
 
 jobs:
-  build:
+  build_and_upload:
     runs-on: ubuntu-latest
 
     strategy:
@@ -31,3 +36,14 @@ jobs:
       run: |
         npm install
         npx webpack
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v6.2.3
+      with:
+        role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
+        aws-region: eu-west-2
+    
+    - name: Additional steps
+      run: |
+        # Your commands that require AWS credentials
+        aws sts get-caller-identity
