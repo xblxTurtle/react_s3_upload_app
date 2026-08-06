@@ -46,5 +46,4 @@ jobs:
     
     - name: Additional steps
       run: |
-        # Your commands that require AWS credentials
-        aws sts get-caller-identity
+        aws s3 cp --recursive ./dist s3://react-app-485291254674-eu-west-2-an/
