@@ -9,6 +9,7 @@ on:
 
 # Need ID token write permission to use OIDC
 permissions:
+  contents: read
   id-token: write
 
 jobs:
