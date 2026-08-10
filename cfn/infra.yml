@@ -5,8 +5,8 @@ Resources:
 
   ReactAppWebHostingBucket:
     Type: "AWS::S3::Bucket"
+    UpdateReplacePolicy : "Retain"
     Properties:
-      UpdateReplacePolicy : "Retain"
       AbacStatus: "Disabled"
       WebsiteConfiguration:
         IndexDocument: "index.html"
