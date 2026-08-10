@@ -14,7 +14,6 @@ Resources:
         IgnorePublicAcls: false
         BlockPublicPolicy: false
         BlockPublicAcls: false
-      BucketName: "react-app-485291254674-eu-west-2-an"
       OwnershipControls:
         Rules:
         - ObjectOwnership: "BucketOwnerEnforced"
