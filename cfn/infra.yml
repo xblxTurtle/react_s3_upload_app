@@ -29,5 +29,5 @@ Resources:
             
 Outputs:
   S3HostingURI:
-    Description: The S3 URI of the web hosting bucket
-    Value: !GetAtt ReactAppWebHostingBucket.RegionalDomainName
+    Description: Bucket Name
+    Value: !Ref ReactAppWebHostingBucket

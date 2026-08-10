@@ -16,7 +16,7 @@ jobs:
   create_infra:
     runs-on: ubuntu-latest
     outputs:
-      HostingBucketName: ${{ steps.get-bucket-step.outputs.HostingBucketName }}
+      BucketName: ${{ steps.get-bucket-step.outputs.BucketName }}
 
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
       - name: Get Hosting Bucket Name
         id: get-bucket-step
         run: |
-          echo "HostingBucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='S3HostingURI'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+          echo "BucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
 
   build_and_upload_react_application:
     runs-on: ubuntu-latest
@@ -70,4 +70,4 @@ jobs:
     
     - name: Upload react app to S3 web site hosting
       run: |
-        aws s3 cp --recursive ./dist ${{needs.create_infra.outputs.HostingBucketName}}
+        aws s3 cp --recursive ./dist s3://${{needs.create_infra.outputs.BucketName}}
