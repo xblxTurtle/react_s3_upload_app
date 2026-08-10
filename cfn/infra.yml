@@ -2,10 +2,9 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: A sample CloudFormation template with YAML comments.
 # Resources section
 Resources:
+
   ReactAppWebHostingBucket:
-    UpdateReplacePolicy: "Retain"
     Type: "AWS::S3::Bucket"
-    DeletionPolicy: "Retain"
     Properties:
       AbacStatus: "Disabled"
       WebsiteConfiguration:
@@ -27,7 +26,7 @@ Resources:
             - "SSE-C"
           ServerSideEncryptionByDefault:
             SSEAlgorithm: "AES256"
-
+            
 Outputs:
   S3HostingURI:
     Description: The S3 URI of the web hosting bucket

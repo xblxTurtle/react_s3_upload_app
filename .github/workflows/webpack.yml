@@ -29,12 +29,12 @@ jobs:
 
       - name: Deploy infra
         run: |
-          aws cloudformation --template-file ./cfn/infra.yml --stack-name react_app_infra
+          aws cloudformation deploy --template-file ./cfn/infra.yml --stack-name reactAppInfra
 
       - name: Get Hosting Bucket Name
         id: get-bucket-step
         run: |
-          aws cloudformation describe-stacks --stack-name react_app_infra --query "Stacks[0].[?OutputKey==`S3HostingURI`].OutputValue" --output text >> "$GITHUB_OUTPUT"
+          aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].[?OutputKey==`S3HostingURI`].OutputValue" --output text >> "$GITHUB_OUTPUT"
 
   build_and_upload_react_application:
     runs-on: ubuntu-latest
