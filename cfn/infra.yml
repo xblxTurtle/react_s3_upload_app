@@ -28,6 +28,6 @@ Resources:
             SSEAlgorithm: "AES256"
             
 Outputs:
-  S3HostingURI:
+  BucketName:
     Description: Bucket Name
     Value: !Ref ReactAppWebHostingBucket
