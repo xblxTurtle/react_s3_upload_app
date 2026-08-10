@@ -70,4 +70,4 @@ jobs:
     
     - name: Upload react app to S3 web site hosting
       run: |
-        aws s3 cp --recursive ./dist ${{needs.create_infra.outputs.S3HostingURI}}
+        aws s3 cp --recursive ./dist ${{needs.create_infra.outputs.HostingBucketName}}
