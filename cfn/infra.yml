@@ -37,7 +37,10 @@ Resources:
           - Effect: Allow
             Principal: '*'
             Action: 's3:GetObject'
-            Resource: !GetAtt ReactAppWebHostingBucket.Arn
+            Resource: !JOIN 
+              - ''
+              - - !GetAtt ReactAppWebHostingBucket.Arn
+                - '/*'
 
 Outputs:
   BucketName:
