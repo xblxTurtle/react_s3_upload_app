@@ -26,7 +26,19 @@ Resources:
             - "SSE-C"
           ServerSideEncryptionByDefault:
             SSEAlgorithm: "AES256"
-            
+
+  BucketPublicGetPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref ReactAppWebHostingBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !GetAtt ReactAppWebHostingBucket.Arn
+
 Outputs:
   BucketName:
     Description: Bucket Name
