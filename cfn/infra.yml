@@ -43,3 +43,6 @@ Outputs:
   BucketName:
     Description: Bucket Name
     Value: !Ref ReactAppWebHostingBucket
+  WebsiteURL:
+    Description: Bucket Website hosting URL
+    Value: !GetAtt ReactAppWebHostingBucket.WebsiteURL

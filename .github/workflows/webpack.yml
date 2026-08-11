@@ -35,6 +35,10 @@ jobs:
         id: get-bucket-step
         run: |
           echo "BucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+      
+      - name: Output website URL
+        run: |
+          echo "$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" --output text)"
 
   build_and_upload_react_application:
     runs-on: ubuntu-latest
