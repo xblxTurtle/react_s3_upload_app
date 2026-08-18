@@ -59,8 +59,8 @@ Resources:
               Action:
               - logs:CreateLogStream
               - logs:PutLogEvents
-              Resource: !Join ['', [!Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/", !Ref Function, ":*"]]
-              
+              Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*"
+
   FunctionURL:
     Type: AWS::Lambda::Url
     Properties:
