@@ -27,14 +27,14 @@ jobs:
           role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
           aws-region: eu-west-2
       
-      - name: Deploy S3 bucket for Lambda source code
+      - name: Create S3 bucket for Lambda source code
         run: |
           aws cloudformation deploy --template-file ./cfn/lambda-bucket.yml --stack-name LambdaBucket
       
       - name: Get Lambda source code Bucket Name
         id: get-lambda-bucket-step
         run: |
-          echo "LambdaBucketName=$(aws cloudformation describe-stacks --stack-name LambdaBucket --query "Stacks[0].Outputs[?OutputKey=='LabdaBucket'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+          echo "LambdaBucketName=$(aws cloudformation describe-stacks --stack-name LambdaBucket --query "Stacks[0].Outputs[?OutputKey=='LambdaBucket'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
 
       - name: archive and upload all lambdas
         shell: bash
@@ -71,11 +71,11 @@ jobs:
           role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
           aws-region: eu-west-2
 
-      - name: Deploy React app infra
+      - name: Create React app infra
         run: |
           aws cloudformation deploy --template-file ./cfn/infra.yml --stack-name reactAppInfra --parameter-overrides LambdaBucketName=${{needs.create_lambda_source_bucket.outputs.LambdaBucketName}}
 
-      - name: Get Hosting Bucket Name
+      - name: Get React app Hosting Bucket Name
         id: get-bucket-step
         run: |
           echo "BucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
