@@ -29,3 +29,6 @@ Outputs:
   LambdaBucket:
     Description: Bucket Name
     Value: !Ref LambdaBucket
+  LambdaBucketArn:
+    Description: Bucket Arn
+    Value: !GetAtt LambdaBucket.Arn

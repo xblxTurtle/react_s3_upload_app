@@ -5,8 +5,69 @@ Parameters:
   LambdaBucketName:
     Type: String
     Description: Name of the bucket with lambda source code package
+  LambdaBucketArn:
+    Type: String
+    Description: Arn of the bucket with lambda source code package
 
 Resources:
+
+  Function:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: presign_lambda.zip
+      Runtime: nodejs20.x
+      Timeout: 5
+  
+
+  LambdaRole: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - name: S3Policy
+          document:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Resource: [!Ref LambdaBucketArn, !Join ['', [!Ref LambdaBucketArn, '/*']]]
+              Action:
+              - s3:Get*
+              - s3:List*
+              - s3:Put*
+              - s3:Describe*
+              - s3-object-lambda:Get*
+              - s3-object-lambda:List*
+              - s3-object-lambda:Put*
+        - name: LogsPolicy
+          document:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action: logs:CreateLogGroup
+              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+            - Effect: Allow
+              Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource: !Join ['', [!Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/", !Ref Function, ":*"]]
+              
+  FunctionURL:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      Cors: 
+        AllowOrigins: ["*"]
+      TargetFunctionArn: !GetAtt Function.Arn
 
   ReactAppWebHostingBucket:
     Type: "AWS::S3::Bucket"

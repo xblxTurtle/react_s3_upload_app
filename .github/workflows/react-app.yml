@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       LambdaBucketName: ${{ steps.get-lambda-bucket-step.outputs.LambdaBucketName }}
+      LambdaBucketArn: ${{ steps.get-lambda-bucket-step.outputs.LambdaBucketArn }}
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +36,7 @@ jobs:
         id: get-lambda-bucket-step
         run: |
           echo "LambdaBucketName=$(aws cloudformation describe-stacks --stack-name LambdaBucket --query "Stacks[0].Outputs[?OutputKey=='LambdaBucket'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+          echo "LambdaBucketArn=$(aws cloudformation describe-stacks --stack-name LambdaBucket --query "Stacks[0].Outputs[?OutputKey=='LambdaBucketArn'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
 
       - name: archive and upload all lambdas
         shell: bash
@@ -73,7 +75,7 @@ jobs:
 
       - name: Create React app infra
         run: |
-          aws cloudformation deploy --template-file ./cfn/infra.yml --stack-name reactAppInfra --parameter-overrides LambdaBucketName=${{needs.create_lambda_source_bucket.outputs.LambdaBucketName}}
+          aws cloudformation deploy --template-file ./cfn/infra.yml --stack-name reactAppInfra --parameter-overrides LambdaBucketName=${{needs.create_lambda_source_bucket.outputs.LambdaBucketName}} LambdaBucketArn=${{needs.create_lambda_source_bucket.outputs.LambdaBucketArn}} --capabilities CAPABILITY_IAM
 
       - name: Get React app Hosting Bucket Name
         id: get-bucket-step
