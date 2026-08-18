@@ -34,8 +34,8 @@ Resources:
             Service: lambda.amazonaws.com
           Action: sts:AssumeRole
       Policies:
-        - name: S3Policy
-          document:
+        - PolicyName: S3Policy
+          PolicyDocument:
             Version: '2012-10-17'
             Statement:
             - Effect: Allow
@@ -48,8 +48,8 @@ Resources:
               - s3-object-lambda:Get*
               - s3-object-lambda:List*
               - s3-object-lambda:Put*
-        - name: LogsPolicy
-          document:
+        - PolicyName: LogsPolicy
+          PolicyDocument:
             Version: '2012-10-17'
             Statement:
             - Effect: Allow
