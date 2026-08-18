@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A CloudFormation template for S3 bucket with lambda source code.
+# Resources section
+Resources:
+
+  LambdaBucket:
+    Type: "AWS::S3::Bucket"
+    UpdateReplacePolicy : "Retain"
+    Properties:
+      AbacStatus: "Disabled"
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        BlockPublicAcls: false
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: "BucketOwnerEnforced"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          BlockedEncryptionTypes:
+            EncryptionType:
+            - "SSE-C"
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+
+Outputs:
+  LambdaBucket:
+    Description: Bucket Name
+    Value: !Ref LambdaBucket

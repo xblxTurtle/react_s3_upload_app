@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: A sample CloudFormation template with YAML comments.
-# Resources section
+
+Parameters:
+  LambdaBucketName:
+    Type: String
+    Description: Name of the bucket with lambda source code package
+
 Resources:
 
   ReactAppWebHostingBucket:

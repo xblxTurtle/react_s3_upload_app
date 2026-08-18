@@ -13,8 +13,52 @@ permissions:
   id-token: write
 
 jobs:
+
+  create_lambda_source_bucket:
+    runs-on: ubuntu-latest
+    outputs:
+      LambdaBucketName: ${{ steps.get-lambda-bucket-step.outputs.LambdaBucketName }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
+          aws-region: eu-west-2
+      
+      - name: Deploy S3 bucket for Lambda source code
+        run: |
+          aws cloudformation deploy --template-file ./cfn/lambda-bucket.yml --stack-name LambdaBucket
+      
+      - name: Get Lambda source code Bucket Name
+        id: get-lambda-bucket-step
+        run: |
+          echo "LambdaBucketName=$(aws cloudformation describe-stacks --stack-name LambdaBucket --query "Stacks[0].Outputs[?OutputKey=='LabdaBucket'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+
+      - name: archive and upload all lambdas
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir lambda_dist
+
+          find lambda -mindepth 1 -maxdepth 1 -type d -print0 |
+            while IFS= read -r -d '' folder; do
+              package_name="$(basename "$folder")"
+              output_path="$GITHUB_WORKSPACE/lambda_dist/$package_name.zip"
+
+              (
+                cd "$folder"
+                zip -qr "$output_path" .
+              )
+              
+              aws s3 cp "$output_path" "s3://${{ steps.get-lambda-bucket-step.outputs.LambdaBucketName }}/$package_name.zip"
+            done
+
   create_infra:
     runs-on: ubuntu-latest
+    needs: create_lambda_source_bucket
     outputs:
       BucketName: ${{ steps.get-bucket-step.outputs.BucketName }}
 
@@ -27,9 +71,9 @@ jobs:
           role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
           aws-region: eu-west-2
 
-      - name: Deploy infra
+      - name: Deploy React app infra
         run: |
-          aws cloudformation deploy --template-file ./cfn/infra.yml --stack-name reactAppInfra
+          aws cloudformation deploy --template-file ./cfn/infra.yml --stack-name reactAppInfra --parameter-overrides LambdaBucketName=${{needs.create_lambda_source_bucket.outputs.LambdaBucketName}}
 
       - name: Get Hosting Bucket Name
         id: get-bucket-step
