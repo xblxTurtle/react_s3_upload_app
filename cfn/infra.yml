@@ -147,12 +147,24 @@ Resources:
         Statement:
           - Effect: Allow
             Principal: '*'
-            Action: ['s3:GetObject', 's3:ListBucket']
+            Action: 's3:GetObject'
             Resource: !Join 
               - ''
               - - !GetAtt UploadBucket.Arn
                 - '/*'
-
+  
+  UploadBucketPublicListPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref UploadBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:ListBucket'
+            Resource: !GetAtt UploadBucket.Arn
+             
   BucketPublicGetPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
