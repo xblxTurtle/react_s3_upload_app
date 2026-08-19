@@ -4,7 +4,7 @@ export const Upload = ({onUpload})=> {
     const [presignUrl, setPresignUrl] = useState('')
     
     return (<div>
-        <form method="put" enctype="multipart/form-data" action={actionUrl} onSubmit={(e) =>{
+        <form method="put" enctype="multipart/form-data" action={presignUrl} onSubmit={(e) =>{
             e.preventDefault();
 
             // Read the form data
