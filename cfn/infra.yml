@@ -121,26 +121,19 @@ Resources:
     UpdateReplacePolicy : "Retain"
     Properties:
       CorsConfiguration:
-        CorsRules: [
-          {
-              "AllowedHeaders": [
-                  "*"
-              ],
-              "AllowedMethods": [
-                  "PUT",
-                  "GET"
-              ],
-              "AllowedOrigins": [
-                  "*"
-              ],
-              "ExposeHeaders": [
-                  "x-amz-server-side-encryption",
-                  "x-amz-request-id",
-                  "x-amz-id-2"
-              ],
-              "MaxAgeSeconds": 3000
-          }
-        ]
+        CorsRules: 
+          - AllowedHeaders: 
+              - "*"
+            AllowedMethods: 
+              - "PUT"
+              - "GET"
+            AllowedOrigins: 
+              - "*"
+            ExposeHeaders: 
+              - x-amz-server-side-encryption
+              - x-amz-request-id
+              - x-amz-id-2
+            MaxAgeSeconds: 3000
       AbacStatus: "Disabled"
       PublicAccessBlockConfiguration:
         RestrictPublicBuckets: false
