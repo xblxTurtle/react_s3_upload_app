@@ -141,7 +141,7 @@ jobs:
     
     - name: Build
       run: |
-        echo "UPLOAD_BUCKET_NAME=${{needs.create_infra.outputs.UploadBuketName}}" >> $GITHUB_ENV
+        echo "UPLOAD_BUCKET_NAME=${{needs.create_infra.outputs.UploadBucketName}}" >> $GITHUB_ENV
         echo "PRESIGN_UPLOAD_URL=${{needs.create_infra.outputs.PresignUploadUrl}}" >> $GITHUB_ENV
         npm install
         npx webpack
