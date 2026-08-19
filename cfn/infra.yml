@@ -65,7 +65,7 @@ Resources:
               Action:
               - s3:Get*
               - s3:List*
-              - s3:Put*
+              - s3:PutObject
               - s3:Describe*
               - s3-object-lambda:Get*
               - s3-object-lambda:List*
