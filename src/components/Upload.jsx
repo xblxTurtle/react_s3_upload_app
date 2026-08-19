@@ -24,7 +24,7 @@ export const Upload = ({onUpload})=> {
                     const str = e.target.value;
                     if (e.target.value) {
                         const fileName = str.substring(str.lastIndexOf('\\')+1);
-                        setPresignUrl(PRESIGN_UPLOAD_URL+"/?key="+fileName);
+                        setPresignUrl(`${process.env.PRESIGN_UPLOAD_URL}/?key=${fileName}`);
                     }
                 }}/>
             </div>

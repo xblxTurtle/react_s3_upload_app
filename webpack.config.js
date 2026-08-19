@@ -27,9 +27,9 @@ export default {
     ],
   },
   plugins: [
-    new webpack.DefinePlugin({
-      UPLOAD_BUCKET_NAME: process.env.UPLOAD_BUCKET_NAME,
-      PRESIGN_UPLOAD_URL: process.env.PRESIGN_UPLOAD_URL
-    })
+    new webpack.EnvironmentPlugin([
+      "UPLOAD_BUCKET_NAME",
+      "PRESIGN_UPLOAD_URL",
+    ]),
   ],
 };

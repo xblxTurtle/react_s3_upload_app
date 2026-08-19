@@ -140,9 +140,10 @@ jobs:
         cp index.html ./dist/
     
     - name: Build
+      env:
+        UPLOAD_BUCKET_NAME: ${{ steps.get-lambda-bucket-step.outputs.UploadBucketName }}
+        PRESIGN_UPLOAD_URL: ${{ steps.some-step.outputs.PresignUploadUrl }}
       run: |
-        echo "UPLOAD_BUCKET_NAME=${{needs.create_infra.outputs.UploadBucketName}}" >> $GITHUB_ENV
-        echo "PRESIGN_UPLOAD_URL=${{needs.create_infra.outputs.PresignUploadUrl}}" >> $GITHUB_ENV
         npm install
         npx webpack
 
