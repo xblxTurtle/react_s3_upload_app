@@ -8,6 +8,8 @@ Resources:
     UpdateReplacePolicy : "Retain"
     Properties:
       AbacStatus: "Disabled"
+      VersioningConfiguration:
+        Status: Enabled
       PublicAccessBlockConfiguration:
         RestrictPublicBuckets: false
         IgnorePublicAcls: false

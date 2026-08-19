@@ -2,6 +2,9 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: A sample CloudFormation template with YAML comments.
 
 Parameters:
+  LambdaSourceVersionId:
+    Type: String
+    Description: Version Id of the zip archive with lambda source code
   LambdaBucketName:
     Type: String
     Description: Name of the bucket with lambda source code package
@@ -19,6 +22,7 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaBucketName
         S3Key: presign_lambda.zip
+        S3ObjectVersion: !Ref LambdaSourceVersionId
       Environment:
         Variables:
           UPLOAD_BUCKET_NAME: !Ref UploadBucket

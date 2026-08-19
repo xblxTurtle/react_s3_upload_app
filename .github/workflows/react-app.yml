@@ -19,6 +19,7 @@ jobs:
     outputs:
       LambdaBucketName: ${{ steps.get-lambda-bucket-step.outputs.LambdaBucketName }}
       LambdaBucketArn: ${{ steps.get-lambda-bucket-step.outputs.LambdaBucketArn }}
+      PresignLambdaArchiveVersionId: ${{ steps.archive_presign_lambda.outputs.version_id }}
     steps:
       - uses: actions/checkout@v4
 
@@ -39,24 +40,44 @@ jobs:
           echo "LambdaBucketArn=$(aws cloudformation describe-stacks --stack-name LambdaBucket --query "Stacks[0].Outputs[?OutputKey=='LambdaBucketArn'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
 
       - name: archive and upload all lambdas
+        id: archive_presign_lambda
         shell: bash
+        env:
+          BUCKET_NAME: ${{ steps.get-lambda-bucket-step.outputs.LambdaBucketName }}
         run: |
           set -euo pipefail
 
-          mkdir lambda_dist
+          folder="$GITHUB_WORKSPACE/lambda/presign_lambda"
+          package_name="presign_lambda"
+          object_key="$package_name.zip"
+          output_path="$GITHUB_WORKSPACE/lambda_dist/$object_key"
 
-          find lambda -mindepth 1 -maxdepth 1 -type d -print0 |
-            while IFS= read -r -d '' folder; do
-              package_name="$(basename "$folder")"
-              output_path="$GITHUB_WORKSPACE/lambda_dist/$package_name.zip"
+          mkdir -p "$GITHUB_WORKSPACE/lambda_dist"
 
-              (
-                cd "$folder"
-                zip -qr "$output_path" .
-              )
-              
-              aws s3 cp "$output_path" "s3://${{ steps.get-lambda-bucket-step.outputs.LambdaBucketName }}/$package_name.zip"
-            done
+          (
+            cd "$folder"
+            zip -qr "$output_path" .
+          )
+
+          aws s3 cp \
+            "$output_path" \
+            "s3://$BUCKET_NAME/$object_key"
+
+          version_id="$(
+            aws s3api head-object \
+              --bucket "$BUCKET_NAME" \
+              --key "$object_key" \
+              --query VersionId \
+              --output text
+          )"
+
+          if [[ "$version_id" == "None" || "$version_id" == "null" ]]; then
+            echo "No version ID returned. Check that S3 versioning is enabled."
+            exit 1
+          fi
+
+          echo "Uploaded S3 object version: $version_id"
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
 
   create_infra:
     runs-on: ubuntu-latest
@@ -121,8 +142,8 @@ jobs:
     
     - name: Build
       run: |
-        run: echo "UPLOAD_BUCKET_NAME=${{needs.create_infra.outputs.UploadBuketName}}" >> $GITHUB_ENV
-        run: echo "PRESIGN_UPLOAD_URL=${{needs.create_infra.outputs.PresignUploadUrl}}" >> $GITHUB_ENV
+        echo "UPLOAD_BUCKET_NAME=${{needs.create_infra.outputs.UploadBuketName}}" >> $GITHUB_ENV
+        echo "PRESIGN_UPLOAD_URL=${{needs.create_infra.outputs.PresignUploadUrl}}" >> $GITHUB_ENV
         npm install
         npx webpack
 
