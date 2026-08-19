@@ -62,7 +62,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: create_lambda_source_bucket
     outputs:
-      BucketName: ${{ steps.get-bucket-step.outputs.BucketName }}
+      HostingBucketName: ${{ steps.get-bucket-step.outputs.HostingBucketName }}
+      UploadBucketName: ${{ steps.get-upload-bucket-step.outputs.UploadBucketName }}
+      PresignUploadUrl: ${{ steps.get-presign-upload-url-step.outputs.PresignUploadUrl }}
 
     steps:
       - uses: actions/checkout@v4
@@ -80,7 +82,17 @@ jobs:
       - name: Get React app Hosting Bucket Name
         id: get-bucket-step
         run: |
-          echo "BucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+          echo "HostingBucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='HostingBucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+      
+      - name: Get React app Upload Bucket Name
+        id: get-upload-bucket-step
+        run: |
+          echo "UploadBucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='UploadBucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+      
+      - name: Get React app Presign Upload Url
+        id: get-presign-upload-url-step
+        run: |
+          echo "PresignUploadUrl=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='PresignUploadUrl'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
       
       - name: Output website URL
         run: |
@@ -109,6 +121,8 @@ jobs:
     
     - name: Build
       run: |
+        run: echo "UPLOAD_BUCKET_NAME=${{needs.create_infra.outputs.UploadBuketName}}" >> $GITHUB_ENV
+        run: echo "PRESIGN_UPLOAD_URL=${{needs.create_infra.outputs.PresignUploadUrl}}" >> $GITHUB_ENV
         npm install
         npx webpack
 
@@ -120,4 +134,4 @@ jobs:
     
     - name: Upload react app to S3 web site hosting
       run: |
-        aws s3 cp --recursive ./dist s3://${{needs.create_infra.outputs.BucketName}}
+        aws s3 cp --recursive ./dist s3://${{needs.create_infra.outputs.HostingBucketName}}

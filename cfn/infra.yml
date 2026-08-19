@@ -19,6 +19,9 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaBucketName
         S3Key: presign_lambda.zip
+      Environment:
+        Variables:
+          UPLOAD_BUCKET_NAME: !Ref UploadBucket
       Runtime: nodejs20.x
       Timeout: 5
   
@@ -109,6 +112,43 @@ Resources:
           ServerSideEncryptionByDefault:
             SSEAlgorithm: "AES256"
 
+  UploadBucket:
+    Type: "AWS::S3::Bucket"
+    UpdateReplacePolicy : "Retain"
+    Properties:
+      AbacStatus: "Disabled"
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        BlockPublicAcls: false
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: "BucketOwnerEnforced"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          BlockedEncryptionTypes:
+            EncryptionType:
+            - "SSE-C"
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+
+  BucketPublicGetPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref UploadBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Join 
+              - ''
+              - - !GetAtt UploadBucket.Arn
+                - '/*'
+
   BucketPublicGetPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
@@ -125,9 +165,15 @@ Resources:
                 - '/*'
 
 Outputs:
-  BucketName:
-    Description: Bucket Name
+  HostingBucketName:
+    Description: Hosting Bucket Name
     Value: !Ref ReactAppWebHostingBucket
   WebsiteURL:
     Description: Bucket Website hosting URL
     Value: !GetAtt ReactAppWebHostingBucket.WebsiteURL
+  UploadBucketName:
+    Description: Upload Bucket Name
+    Value: !Ref UploadBucket
+  PresignUploadUrl:
+    Description: Presign Lambda URL
+    Value: !GetAtt Function.FunctionUrl

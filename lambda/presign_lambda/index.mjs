@@ -2,12 +2,14 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const region = "eu-west-2";
-const bucket = "test-485291254674-eu-west-2-an";
 
 const client = new S3Client({ region });
 
 export const handler = async ({key}) => {
+  const bucket = process.env.UPLOAD_BUCKET_NAME;
   const fullKey = "upload/" + key;
+  console.log('upload bucket = ',bucket);
+  console.log('key = ',key);
   const command = new PutObjectCommand({ Bucket: bucket, Key: fullKey });
   const url = await getSignedUrl(client, command, { expiresIn: 5 });
 

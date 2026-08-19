@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import webpack from "webpack";
 
 // In Node.js versions prior to native support for import.meta.dirname,
 // derive __dirname from import.meta.url.
@@ -25,4 +26,10 @@ export default {
       },
     ],
   },
+  plugins: [
+    new webpack.DefinePlugin({
+      UPLOAD_BUCKET_NAME: process.env.UPLOAD_BUCKET_NAME,
+      PRESIGN_UPLOAD_URL: process.env.PRESIGN_UPLOAD_URL
+    })
+  ],
 };
