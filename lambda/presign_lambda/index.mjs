@@ -5,8 +5,12 @@ const region = "eu-west-2";
 
 const client = new S3Client({ region });
 
-export const handler = async ({key}) => {
+export const handler = async (event) => {
   const bucket = process.env.UPLOAD_BUCKET_NAME;
+  if (!event.queryStringParameters || !event.queryStringParameters.key) {
+    throw new Error('Key url param is not provided')
+  }
+  const key = event.queryStringParameters.key;
   const fullKey = "upload/" + key;
   console.log('upload bucket = ',bucket);
   console.log('key = ',key);
