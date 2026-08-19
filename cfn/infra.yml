@@ -138,7 +138,7 @@ Resources:
           ServerSideEncryptionByDefault:
             SSEAlgorithm: "AES256"
 
-  BucketPublicGetPolicy:
+  UploadBucketPublicGetPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref UploadBucket
