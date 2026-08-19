@@ -6,7 +6,7 @@ export const App = () => {
     const [files, setFiles] = useState();
 
         const startRequest = async () => { 
-                const res = await fetch("https://test-485291254674-eu-west-2-an.s3.eu-west-2.amazonaws.com/?list-type=2&prefix=upload/",{
+                const res = await fetch(`https://${process.env.UPLOAD_BUCKET_NAME}.s3.eu-west-2.amazonaws.com/?list-type=2&prefix=upload/`,{
                 cache: "no-store"
             });
             if (!res.ok) {

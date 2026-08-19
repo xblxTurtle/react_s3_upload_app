@@ -1,0 +1,194 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A sample CloudFormation template with YAML comments.
+
+Parameters:
+  LambdaArchiveVersionId:
+    Type: String
+    Description: Version Id of the zip archive with lambda source code
+  LambdaBucketName:
+    Type: String
+    Description: Name of the bucket with lambda source code package
+  LambdaBucketArn:
+    Type: String
+    Description: Arn of the bucket with lambda source code package
+
+Resources:
+
+  Function:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: presign_lambda.zip
+        S3ObjectVersion: !Ref LambdaArchiveVersionId
+      Environment:
+        Variables:
+          UPLOAD_BUCKET_NAME: !Ref UploadBucket
+      Runtime: nodejs20.x
+      Timeout: 5
+  
+  permissionForLambdaURLInvoke:
+     Type: AWS::Lambda::Permission
+     Properties:
+       FunctionName: !Ref Function
+       FunctionUrlAuthType: 'NONE'
+       Action: lambda:InvokeFunctionUrl
+       Principal: '*'
+  
+  permissionForLambdaInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      InvokedViaFunctionUrl : true
+      Principal: '*'
+
+  LambdaRole: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3Policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Resource: [!GetAtt UploadBucket.Arn, !Ref LambdaBucketArn, !Join ['', [!Ref LambdaBucketArn, '/*']], !Join ['', [!GetAtt UploadBucket.Arn, '/*']]]
+              Action:
+              - s3:Get*
+              - s3:List*
+              - s3:PutObject
+              - s3:Describe*
+              - s3-object-lambda:Get*
+              - s3-object-lambda:List*
+              - s3-object-lambda:Put*
+        - PolicyName: LogsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action: logs:CreateLogGroup
+              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+            - Effect: Allow
+              Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*"
+
+  FunctionURL:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      Cors: 
+        AllowOrigins: ["*"]
+      TargetFunctionArn: !GetAtt Function.Arn
+
+
+  ReactAppWebHostingBucket:
+    Type: "AWS::S3::Bucket"
+    UpdateReplacePolicy : "Retain"
+    Properties:
+      AbacStatus: "Disabled"
+      WebsiteConfiguration:
+        IndexDocument: "index.html"
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        BlockPublicAcls: false
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: "BucketOwnerEnforced"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          BlockedEncryptionTypes:
+            EncryptionType:
+            - "SSE-C"
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+
+  UploadBucket:
+    Type: "AWS::S3::Bucket"
+    UpdateReplacePolicy : "Retain"
+    Properties:
+      CorsConfiguration:
+        CorsRules: 
+          - AllowedHeaders: 
+              - "*"
+            AllowedMethods: 
+              - "PUT"
+              - "GET"
+            AllowedOrigins: 
+              - "*"
+            ExposedHeaders: 
+              - x-amz-server-side-encryption
+              - x-amz-request-id
+              - x-amz-id-2
+            MaxAge: 3000
+      AbacStatus: "Disabled"
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        BlockPublicAcls: false
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: "BucketOwnerEnforced"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          BlockedEncryptionTypes:
+            EncryptionType:
+            - "SSE-C"
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+
+  UploadBucketPublicGetPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref UploadBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:ListBucket'
+            Resource: !GetAtt UploadBucket.Arn
+
+  BucketPublicGetPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref ReactAppWebHostingBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Join 
+              - ''
+              - - !GetAtt ReactAppWebHostingBucket.Arn
+                - '/*'
+
+Outputs:
+  HostingBucketName:
+    Description: Hosting Bucket Name
+    Value: !Ref ReactAppWebHostingBucket
+  WebsiteURL:
+    Description: Bucket Website hosting URL
+    Value: !GetAtt ReactAppWebHostingBucket.WebsiteURL
+  UploadBucketName:
+    Description: Upload Bucket Name
+    Value: !Ref UploadBucket
+  PresignUploadUrl:
+    Description: Presign Lambda URL
+    Value: !GetAtt FunctionURL.FunctionUrl

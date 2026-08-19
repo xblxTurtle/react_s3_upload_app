@@ -1,22 +1,20 @@
 import React, {useState} from 'react';
 
 export const Upload = ({onUpload})=> {
-    const [actionUrl, setActionUrl] = useState('')
+    const [presignUrl, setPresignUrl] = useState('')
     
     return (<div>
-        <form method="put" enctype="multipart/form-data" action={actionUrl} onSubmit={(e) =>{
+        <form method="put" enctype="multipart/form-data" action={presignUrl} onSubmit={(e) =>{
             e.preventDefault();
 
             // Read the form data
             const form = e.target;
             const formData = new FormData(form);
 
-
-            if (actionUrl) {
-                // You can pass formData as a fetch body directly:
-                fetch(actionUrl, { method: "PUT", body: formData }).then(()=>{
-                    onUpload();
-                });
+            if (presignUrl) {
+                fetch(presignUrl)
+                    .then((res)=>res.json())
+                    .then(json=> fetch(json.url, { method: "PUT", body: formData }).then(onUpload))
             }
         }}>
             <div>
@@ -26,12 +24,12 @@ export const Upload = ({onUpload})=> {
                     const str = e.target.value;
                     if (e.target.value) {
                         const fileName = str.substring(str.lastIndexOf('\\')+1);
-                        setActionUrl("https://test-485291254674-eu-west-2-an.s3.eu-west-2.amazonaws.com/upload/" + fileName);
+                        setPresignUrl(`${process.env.PRESIGN_UPLOAD_URL}/?key=${fileName}`);
                     }
                 }}/>
             </div>
             <div>
-                <button disabled={!actionUrl}>Upload</button>
+                <button disabled={!presignUrl}>Upload</button>
             </div>
         </form>
     </div>);

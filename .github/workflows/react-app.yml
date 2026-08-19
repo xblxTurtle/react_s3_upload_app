@@ -1,0 +1,158 @@
+name: Basic React app
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+    types: [opened, synchronize, reopened, closed]
+
+# Need ID token write permission to use OIDC
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+
+  create_lambda_source_bucket:
+    runs-on: ubuntu-latest
+    outputs:
+      LambdaBucketName: ${{ steps.get-lambda-bucket-step.outputs.LambdaBucketName }}
+      LambdaBucketArn: ${{ steps.get-lambda-bucket-step.outputs.LambdaBucketArn }}
+      LambdaArchiveVersionId: ${{ steps.archive_presign_lambda.outputs.version_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
+          aws-region: eu-west-2
+      
+      - name: Create S3 bucket for Lambda source code
+        run: |
+          aws cloudformation deploy --template-file ./cfn/lambda-bucket.yml --stack-name LambdaBucket
+      
+      - name: Get Lambda source code Bucket Name
+        id: get-lambda-bucket-step
+        run: |
+          echo "LambdaBucketName=$(aws cloudformation describe-stacks --stack-name LambdaBucket --query "Stacks[0].Outputs[?OutputKey=='LambdaBucket'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+          echo "LambdaBucketArn=$(aws cloudformation describe-stacks --stack-name LambdaBucket --query "Stacks[0].Outputs[?OutputKey=='LambdaBucketArn'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+
+      - name: archive and upload all lambdas
+        id: archive_presign_lambda
+        shell: bash
+        env:
+          BUCKET_NAME: ${{ steps.get-lambda-bucket-step.outputs.LambdaBucketName }}
+        run: |
+          set -euo pipefail
+
+          folder="$GITHUB_WORKSPACE/lambda/presign_lambda"
+          package_name="presign_lambda"
+          object_key="$package_name.zip"
+          output_path="$GITHUB_WORKSPACE/lambda_dist/$object_key"
+
+          mkdir -p "$GITHUB_WORKSPACE/lambda_dist"
+
+          (
+            cd "$folder"
+            zip -qr "$output_path" .
+          )
+
+          aws s3 cp \
+            "$output_path" \
+            "s3://$BUCKET_NAME/$object_key"
+
+          version_id="$(
+            aws s3api head-object \
+              --bucket "$BUCKET_NAME" \
+              --key "$object_key" \
+              --query VersionId \
+              --output text
+          )"
+          if [[ "$version_id" == "None" || "$version_id" == "null" ]]; then
+            echo "No version ID returned. Check that S3 versioning is enabled."
+            exit 1
+          fi
+
+          echo "Uploaded S3 object version: $version_id"
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
+
+  create_infra:
+    runs-on: ubuntu-latest
+    needs: create_lambda_source_bucket
+    outputs:
+      HostingBucketName: ${{ steps.get-bucket-step.outputs.HostingBucketName }}
+      UploadBucketName: ${{ steps.get-upload-bucket-step.outputs.UploadBucketName }}
+      PresignUploadUrl: ${{ steps.get-presign-upload-url-step.outputs.PresignUploadUrl }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
+          aws-region: eu-west-2
+
+      - name: Create React app infra
+        run: |
+          aws cloudformation deploy --template-file ./cfn/infra.yml --stack-name reactAppInfra --parameter-overrides LambdaBucketName=${{needs.create_lambda_source_bucket.outputs.LambdaBucketName}} LambdaBucketArn=${{needs.create_lambda_source_bucket.outputs.LambdaBucketArn}} LambdaArchiveVersionId=${{needs.create_lambda_source_bucket.outputs.LambdaArchiveVersionId}} --capabilities CAPABILITY_IAM
+
+      - name: Get React app Hosting Bucket Name
+        id: get-bucket-step
+        run: |
+          echo "HostingBucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='HostingBucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+      
+      - name: Get React app Upload Bucket Name
+        id: get-upload-bucket-step
+        run: |
+          echo "UploadBucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='UploadBucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+      
+      - name: Get React app Presign Upload Url
+        id: get-presign-upload-url-step
+        run: |
+          echo "PresignUploadUrl=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='PresignUploadUrl'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
+      
+      - name: Output website URL
+        run: |
+          echo "$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" --output text)"
+
+  build_and_upload_react_application:
+    runs-on: ubuntu-latest
+    needs: create_infra
+
+    strategy:
+      matrix:
+        node-version: [24.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - name: create dist
+      run: |
+        mkdir dist
+        cp index.html ./dist/
+    
+    - name: Build
+      env:
+        UPLOAD_BUCKET_NAME: ${{ needs.create_infra.outputs.UploadBucketName }}
+        PRESIGN_UPLOAD_URL: ${{ needs.create_infra.outputs.PresignUploadUrl }}
+      run: |
+        npm install
+        npx webpack
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v6.2.3
+      with:
+        role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
+        aws-region: eu-west-2
+    
+    - name: Upload react app to S3 web site hosting
+      run: |
+        aws s3 cp --recursive ./dist s3://${{needs.create_infra.outputs.HostingBucketName}}
