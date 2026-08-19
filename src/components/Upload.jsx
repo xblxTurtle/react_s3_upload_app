@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 
 export const Upload = ({onUpload})=> {
-    const [actionUrl, setActionUrl] = useState('')
+    const [presignUrl, setPresignUrl] = useState('')
     
     return (<div>
         <form method="put" enctype="multipart/form-data" action={actionUrl} onSubmit={(e) =>{
@@ -11,12 +11,10 @@ export const Upload = ({onUpload})=> {
             const form = e.target;
             const formData = new FormData(form);
 
-
-            if (actionUrl) {
-                // You can pass formData as a fetch body directly:
-                fetch(actionUrl, { method: "PUT", body: formData }).then(()=>{
-                    onUpload();
-                });
+            if (presignUrl) {
+                fetch(presignUrl)
+                    .then((res)=>res.json())
+                    .then(json=> fetch(json.url, { method: "PUT", body: formData }).then(onUpload))
             }
         }}>
             <div>
@@ -26,10 +24,7 @@ export const Upload = ({onUpload})=> {
                     const str = e.target.value;
                     if (e.target.value) {
                         const fileName = str.substring(str.lastIndexOf('\\')+1);
-                        
-                        fetch(PRESIGN_UPLOAD_URL+"/?key="+fileName)
-                            .then((res)=>res.json())
-                            .then(json=> setActionUrl(json.url))
+                        setPresignUrl(PRESIGN_UPLOAD_URL+"/?key="+fileName);
                     }
                 }}/>
             </div>
