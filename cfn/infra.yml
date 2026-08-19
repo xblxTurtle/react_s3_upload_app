@@ -29,6 +29,14 @@ Resources:
        FunctionUrlAuthType: 'NONE'
        Action: lambda:InvokeFunctionUrl
        Principal: '*'
+  
+  permissionForLambdaInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      InvokedViaFunctionUrl : true
+      Principal: '*'
 
   LambdaRole: 
     Type: "AWS::IAM::Role"
