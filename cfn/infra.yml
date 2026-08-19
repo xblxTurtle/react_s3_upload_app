@@ -61,7 +61,7 @@ Resources:
             Version: '2012-10-17'
             Statement:
             - Effect: Allow
-              Resource: [!Ref UploadBucket, !Ref LambdaBucketArn, !Join ['', [!Ref LambdaBucketArn, '/*']], !Join ['', [!Ref UploadBucket, '/*']]]
+              Resource: [!GetAtt UploadBucket.Arn, !Ref LambdaBucketArn, !Join ['', [!Ref LambdaBucketArn, '/*']], !Join ['', [!GetAtt UploadBucket.Arn, '/*']]]
               Action:
               - s3:Get*
               - s3:List*
