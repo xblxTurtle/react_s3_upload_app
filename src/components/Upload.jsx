@@ -29,7 +29,7 @@ export const Upload = ({onUpload})=> {
                 }}/>
             </div>
             <div>
-                <button disabled={!actionUrl}>Upload</button>
+                <button disabled={!presignUrl}>Upload</button>
             </div>
         </form>
     </div>);
