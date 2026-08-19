@@ -26,7 +26,10 @@ export const Upload = ({onUpload})=> {
                     const str = e.target.value;
                     if (e.target.value) {
                         const fileName = str.substring(str.lastIndexOf('\\')+1);
-                        setActionUrl("https://test-485291254674-eu-west-2-an.s3.eu-west-2.amazonaws.com/upload/" + fileName);
+                        
+                        fetch(PRESIGN_UPLOAD_URL+"/?key="+fileName)
+                            .then((res)=>res.json())
+                            .then(json=> setActionUrl(json.url))
                     }
                 }}/>
             </div>
