@@ -120,6 +120,27 @@ Resources:
     Type: "AWS::S3::Bucket"
     UpdateReplacePolicy : "Retain"
     Properties:
+      CorsConfigurations:
+        CorsRules: [
+          {
+              "AllowedHeaders": [
+                  "*"
+              ],
+              "AllowedMethods": [
+                  "PUT",
+                  "GET"
+              ],
+              "AllowedOrigins": [
+                  "*"
+              ],
+              "ExposeHeaders": [
+                  "x-amz-server-side-encryption",
+                  "x-amz-request-id",
+                  "x-amz-id-2"
+              ],
+              "MaxAgeSeconds": 3000
+          }
+        ]
       AbacStatus: "Disabled"
       PublicAccessBlockConfiguration:
         RestrictPublicBuckets: false
@@ -147,23 +168,24 @@ Resources:
         Statement:
           - Effect: Allow
             Principal: '*'
+            Action: 's3:ListBucket'
+            Resource: !GetAtt UploadBucket.Arn
+          
+          - Effect: Allow
+            Principal: '*'
             Action: 's3:GetObject'
             Resource: !Join 
               - ''
               - - !GetAtt UploadBucket.Arn
                 - '/*'
-  
-  UploadBucketPublicListPolicy:
-    Type: 'AWS::S3::BucketPolicy'
-    Properties:
-      Bucket: !Ref UploadBucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
+          
           - Effect: Allow
             Principal: '*'
-            Action: 's3:ListBucket'
-            Resource: !GetAtt UploadBucket.Arn
+            Action: 's3:PutObject'
+            Resource: !Join 
+              - ''
+              - - !GetAtt UploadBucket.Arn
+                - '/*'
              
   BucketPublicGetPolicy:
     Type: 'AWS::S3::BucketPolicy'
