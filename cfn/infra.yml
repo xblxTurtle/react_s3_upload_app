@@ -61,7 +61,7 @@ Resources:
             Version: '2012-10-17'
             Statement:
             - Effect: Allow
-              Resource: [!Ref LambdaBucketArn, !Join ['', [!Ref LambdaBucketArn, '/*']]]
+              Resource: [!Ref UploadBucket, !Ref LambdaBucketArn, !Join ['', [!Ref LambdaBucketArn, '/*']], !Join ['', [!Ref UploadBucket, '/*']]]
               Action:
               - s3:Get*
               - s3:List*
@@ -163,40 +163,6 @@ Resources:
             Principal: '*'
             Action: 's3:ListBucket'
             Resource: !GetAtt UploadBucket.Arn
-          
-          - Effect: Allow
-            Principal: '*'
-            Action: 's3:GetObject'
-            Resource: !Join 
-              - ''
-              - - !GetAtt UploadBucket.Arn
-                - '/*'
-          
-          - Effect: Allow
-            Principal: '*'
-            Action: 's3:PutObject'
-            Resource: !Join 
-              - ''
-              - - !GetAtt UploadBucket.Arn
-                - '/*'
-
-  UploadBucketPublicListPolicy:
-    Type: 'AWS::S3::BucketPolicy'
-    DeletionPolicy: Retain
-    Properties:
-      Bucket: !Ref UploadBucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal: '*'
-            Action: 's3:ListBucket'
-            Resource: !GetAtt UploadBucket.Arn
-            Action: 's3:PutObject'
-            Resource: !Join 
-              - ''
-              - - !GetAtt UploadBucket.Arn
-                - '/*'
 
   BucketPublicGetPolicy:
     Type: 'AWS::S3::BucketPolicy'
