@@ -141,8 +141,8 @@ jobs:
     
     - name: Build
       env:
-        UPLOAD_BUCKET_NAME: ${{ steps.get-lambda-bucket-step.outputs.UploadBucketName }}
-        PRESIGN_UPLOAD_URL: ${{ steps.some-step.outputs.PresignUploadUrl }}
+        UPLOAD_BUCKET_NAME: ${{ needs.create_infra.outputs.UploadBucketName }}
+        PRESIGN_UPLOAD_URL: ${{ needs.create_infra.outputs.PresignUploadUrl }}
       run: |
         npm install
         npx webpack
