@@ -5,7 +5,6 @@ Resources:
 
   LambdaBucket:
     Type: "AWS::S3::Bucket"
-    UpdateReplacePolicy : "Retain"
     Properties:
       AbacStatus: "Disabled"
       VersioningConfiguration:
