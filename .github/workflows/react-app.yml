@@ -2,9 +2,9 @@ name: Basic React app
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
     types: [opened, synchronize, reopened, closed]
 
 # Need ID token write permission to use OIDC
@@ -13,6 +13,39 @@ permissions:
   id-token: write
 
 jobs:
+  code_review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Please review this pull request with a focus on:
+            - Code quality and best practices
+            - Potential bugs or issues
+            - Security implications
+            - Performance considerations
+
+            Note: The PR branch is already checked out in the current working directory.
+
+            Use `gh pr comment` for top-level feedback.
+            Use `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`) to highlight specific code issues.
+            Only post GitHub comments - don't submit review text as messages.
+
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
 
   create_lambda_source_bucket:
     runs-on: ubuntu-latest
@@ -28,11 +61,11 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
           aws-region: eu-west-2
-      
+
       - name: Create S3 bucket for Lambda source code
         run: |
           aws cloudformation deploy --template-file ./cfn/lambda-bucket.yml --stack-name LambdaBucket
-      
+
       - name: Get Lambda source code Bucket Name
         id: get-lambda-bucket-step
         run: |
@@ -103,17 +136,17 @@ jobs:
         id: get-bucket-step
         run: |
           echo "HostingBucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='HostingBucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
-      
+
       - name: Get React app Upload Bucket Name
         id: get-upload-bucket-step
         run: |
           echo "UploadBucketName=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='UploadBucketName'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
-      
+
       - name: Get React app Presign Upload Url
         id: get-presign-upload-url-step
         run: |
           echo "PresignUploadUrl=$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='PresignUploadUrl'].OutputValue" --output text)" >> "$GITHUB_OUTPUT"
-      
+
       - name: Output website URL
         run: |
           echo "$(aws cloudformation describe-stacks --stack-name reactAppInfra --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" --output text)"
@@ -127,32 +160,32 @@ jobs:
         node-version: [24.x]
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    
-    - name: create dist
-      run: |
-        mkdir dist
-        cp index.html ./dist/
-    
-    - name: Build
-      env:
-        UPLOAD_BUCKET_NAME: ${{ needs.create_infra.outputs.UploadBucketName }}
-        PRESIGN_UPLOAD_URL: ${{ needs.create_infra.outputs.PresignUploadUrl }}
-      run: |
-        npm install
-        npx webpack
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v6.2.3
-      with:
-        role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
-        aws-region: eu-west-2
-    
-    - name: Upload react app to S3 web site hosting
-      run: |
-        aws s3 cp --recursive ./dist s3://${{needs.create_infra.outputs.HostingBucketName}}
+      - name: create dist
+        run: |
+          mkdir dist
+          cp index.html ./dist/
+
+      - name: Build
+        env:
+          UPLOAD_BUCKET_NAME: ${{ needs.create_infra.outputs.UploadBucketName }}
+          PRESIGN_UPLOAD_URL: ${{ needs.create_infra.outputs.PresignUploadUrl }}
+        run: |
+          npm install
+          npx webpack
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: arn:aws:iam::485291254674:role/GitHubActionReactApp
+          aws-region: eu-west-2
+
+      - name: Upload react app to S3 web site hosting
+        run: |
+          aws s3 cp --recursive ./dist s3://${{needs.create_infra.outputs.HostingBucketName}}
