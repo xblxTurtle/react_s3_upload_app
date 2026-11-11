@@ -9,6 +9,7 @@ export const Upload = ({onUpload})=> {
                 <label for='file'>Select new file for upload:</label>
                 <input type="file" id="file" onChange={(e)=>{
                     const str = e.target.value;
+                    str += 'some_preffix';
                     let presignUrl;
                     if (e.target.value) {
                         const fileName = str.substring(str.lastIndexOf('\\')+1);
