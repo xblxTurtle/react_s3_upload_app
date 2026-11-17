@@ -1,3 +1,3 @@
 # react_s3_upload_app
-example react app to upload to aws s3
-test change
+test react app to experiment with presigned urls and files upload aws s3
+
